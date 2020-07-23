@@ -60,7 +60,10 @@ The goals of automating VPN setup and making it configurable are:
                      +----------------------+                                          
 ```
 
-For setting this up, we can take advantage of our terraform module configuration, to deploy and expose an OpenVPN server. Feedback required from @xjtian on how to add this specification. VPN credentials will be handed and provisioned from cloud controller during bootstrapping process (which is part of the magmad connection with the access gateway), these should be rotated along with the gateway certs and revoked if these become not valid or are expired.
+For setting this up, we can take advantage of our terraform module configuration, to deploy and expose an OpenVPN server. 
+We can deploy an OpenVPN server on kubernetes by using helm openvpn module on: https://hub.helm.sh/charts/stable/openvpn. This server should use persistent volume in k8s to store all the client keys mapping information. 
+
+VPN credentials will be handed and provisioned from cloud controller during bootstrapping process (which is part of the magmad connection with the access gateway), these should be rotated along with the gateway certs and revoked if these become not valid or are expired. The boostrapper module in cloud will be in charge of managing the client keys stored on disk by a RPC interface, and then hand them down to the gateway only after a successful bootstrap process. We can mount the same persistent volume that the server uses for storing the client keys onto the bootstrapper, which will be the communication and syncing between the bootstrapper and OpenVPN.
 
 From Orchestrator, we can add controller app endpoints that will allow user to do multiple operations on the VPN connection config:
 - `.../gateways/gateway_id/vpn_config`
@@ -73,6 +76,7 @@ From here, the AGW can spin off and enable an OpenVPN TCP client, we can wrap th
 ## Timeline of Work
 
 - Adding deployment of OpenVPN server through Terraform module
+- Implement interface for bootstrapper management of persistent client kyes
 - Update bootstrapper process to include provision / maintenance of VPN creds for enabled VPN gateways
 - Add OpenVPN client wrapper to AGWs
 - Add cloud endpoints for VPN configuration / management 
